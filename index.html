@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full Screen Bouncing DVD Logo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #000000;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="screensaver"></canvas>
+
+    <script>
+        const canvas = document.getElementById('screensaver');
+        const ctx = canvas.getContext('2d');
+
+        // Setup canvas to match exact window dimensions
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            // Recalculate dimensions based on new screen size
+            if (logo.complete && logo.naturalWidth > 0) {
+                calculateLogoSize();
+            }
+        }
+
+        // Load your custom logo image
+        const logo = new Image();
+        logo.src = 'logo.png';
+
+        let logoWidth = 0;
+        let logoHeight = 0;
+        let x = 0;
+        let y = 0;
+        
+        // Adjust speed here (higher numbers = faster bounce)
+        let dx = 5; 
+        let dy = 5; 
+
+        // Hue-rotate values to shift the red logo color on impact
+        const colors = [0, 50, 100, 160, 200, 280, 320];
+        let currentColorIndex = 0;
+
+        function calculateLogoSize() {
+            // Scales the logo to always be 20% of the screen width 
+            // while maintaining its native aspect ratio
+            const scaleFactor = (window.innerWidth * 0.20) / logo.width;
+            logoWidth = logo.width * scaleFactor;
+            logoHeight = logo.height * scaleFactor;
+        }
+
+        logo.onload = function() {
+            calculateLogoSize();
+
+            // Spawn at a random position safely within screen boundaries
+            x = Math.random() * (canvas.width - logoWidth);
+            y = Math.random() * (canvas.height - logoHeight);
+
+            // Start loop
+            animate();
+        };
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function animate() {
+            // Clear screen completely each frame
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Color manipulation filter for the DVD effect
+            ctx.filter = `hue-rotate(${colors[currentColorIndex]}deg)`;
+
+            // Draw logo
+            ctx.drawImage(logo, x, y, logoWidth, logoHeight);
+
+            // Update position vectors
+            x += dx;
+            y += dy;
+
+            let hitWall = false;
+
+            // Collision Detection with screen limits
+            if (x + logoWidth >= canvas.width) {
+                x = canvas.width - logoWidth;
+                dx = -dx;
+                hitWall = true;
+            } else if (x <= 0) {
+                x = 0;
+                dx = -dx;
+                hitWall = true;
+            }
+
+            if (y + logoHeight >= canvas.height) {
+                y = canvas.height - logoHeight;
+                dy = -dy;
+                hitWall = true;
+            } else if (y <= 0) {
+                y = 0;
+                dy = -dy;
+                hitWall = true;
+            }
+
+            if (hitWall) {
+                currentColorIndex = (currentColorIndex + 1) % colors.length;
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Fullscreen toggle on window click
+        document.body.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.error(`Fullscreen error: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+    </script>
+</body>
+</html>
